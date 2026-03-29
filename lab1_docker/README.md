@@ -40,13 +40,49 @@ merged=/var/lib/{имя-утилиты}/{id}/merged
 
 Запускаемая команда становится `PID=1` внутри контейнера и утилита ждёт её завершения (foreground)
 
-### 1.6 Опционально
+### 1.7 Опционально
 
 1) Настроить cgroups для ограничения ресурсов контейнера (CPU, память, IO).
 2) Внутри контейнера монтировать `/proc` для корректной работы утилит типа `ps`.
 
 
 ## 2. Ход выполнения
+
+### 2.1 OCI - Open Container Runtime - спецификация
+
+Пример представлен тут: [https://github.com/opencontainers/runtime-spec/blob/main/config.md](https://github.com/opencontainers/runtime-spec/blob/main/config.md)
+
+В нашем случае будет использоваться такой `config.json`:
+```json
+{
+    "ociVersion": "1.3.0",
+    "process": {
+        "cwd": "/root",
+        "args": [
+            "sh"
+        ]
+    },
+    "root": {
+        "path": "rootfs",
+        "readonly": true
+    },
+    "hostname": "agonek",
+    "linux": {
+        "namespaces": [
+            {
+                "type": "pid"
+            },
+            {
+                "type": "mount"
+            },
+            {
+                "type": "uts"
+            }
+        ]
+    }
+}
+```
+
 
 
 
