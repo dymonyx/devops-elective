@@ -1,0 +1,27 @@
+{
+    "ociVersion": "1.3.0",
+    "process": {
+        "cwd": "/root",
+        "args": [
+            "sh"
+        ]
+    },
+    "root": {
+        "path": "rootfs",
+        "readonly": true
+    },
+    "hostname": "agonek",
+    "linux": {
+        "namespaces": [
+            {
+                "type": "pid"
+            },
+            {
+                "type": "mount"
+            },
+            {
+                "type": "uts"
+            }
+        ]
+    }
+}
