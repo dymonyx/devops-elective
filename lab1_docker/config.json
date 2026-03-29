@@ -7,7 +7,7 @@
         ]
     },
     "root": {
-        "path": "rootfs",
+        "path": "alpine-rootfs/",
         "readonly": true
     },
     "hostname": "agonek",
