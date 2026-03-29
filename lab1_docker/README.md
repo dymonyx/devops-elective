@@ -59,14 +59,14 @@ merged=/var/lib/{имя-утилиты}/{id}/merged
     "process": {
         "cwd": "/root",
         "args": [
-            "sh"
+            "hostname"
         ]
     },
     "root": {
         "path": "alpine-rootfs/",
         "readonly": true
     },
-    "hostname": "agonek",
+    "hostname": "isolated_agonek",
     "linux": {
         "namespaces": [
             {
