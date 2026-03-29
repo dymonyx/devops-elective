@@ -63,7 +63,7 @@ merged=/var/lib/{имя-утилиты}/{id}/merged
         ]
     },
     "root": {
-        "path": "rootfs",
+        "path": "alpine-rootfs/",
         "readonly": true
     },
     "hostname": "agonek",
@@ -98,9 +98,7 @@ merged=/var/lib/{имя-утилиты}/{id}/merged
 ### 3.2 Команды проверки
 
 ```bash
-docker ps
-docker logs <container_name>
-docker compose ps
+sudo python3 myruntime.py run --id test1 --config ./config.json
 ```
 
 ### 3.3 Скриншоты / артефакты
