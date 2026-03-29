@@ -18,13 +18,7 @@ def parse_args():
 def load_config(config_path):
     with open(config_path, "r", encoding="utf-8") as config_file:
         config = json.load(config_file)
-
-    process = config.get("process", {})
-    return {
-        "hostname": config.get("hostname", "N/A"),
-        "process_cwd": process.get("cwd", "/"),
-        "process_args": process.get("args", []),
-    }
+    return config
 
 
 def build_paths(container_id):
@@ -74,16 +68,26 @@ def enter_rootfs(merged):
     os.chdir("/")
 
 
+def run_process(process_args, process_cwd):
+    os.chdir(process_cwd)
+    os.execvp(process_args[0], process_args)
+
+
 def main():
     args = parse_args()
     config = load_config(args.config)
+
+    hostname = config.get("hostname", "N/A")
+    process = config.get("process", {})
+    process_cwd = process.get("cwd", "/")
+    process_args = process.get("args", [])
     paths = build_paths(args.id)
 
     create_container_dirs(paths)
     mount_overlay(paths)
     enter_rootfs(paths["merged"])
 
-    os.system("ls /")
+    run_process(process_args, process_cwd)
 
 
 if __name__ == "__main__":
