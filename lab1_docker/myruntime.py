@@ -7,6 +7,7 @@ import socket
 
 BASE_DIR = "/var/lib"
 RUNTIME_NAME = "myruntime"
+CGROUP_BASE = "/sys/fs/cgroup/"
 
 
 def parse_args():
@@ -124,6 +125,19 @@ def mount_proc():
         )
 
 
+def create_ram_cgroup(container_id):
+    """Creates a cgroup for RAM memory limit."""
+    cgroup_runtime_path = os.path.join(CGROUP_BASE, RUNTIME_NAME)
+    os.makedirs(cgroup_runtime_path, exist_ok=True)
+    with open(os.path.join(cgroup_runtime_path, "cgroup.subtree_control"), "w", encoding="utf-8") as f:
+        f.write("+memory")
+    cgroup_path = os.path.join(cgroup_runtime_path, container_id)
+    os.makedirs(cgroup_path, exist_ok=True)
+    with open(os.path.join(cgroup_path, "memory.max"), "w", encoding="utf-8") as f:
+        f.write("100M")
+    return cgroup_path
+
+
 def clean_up(paths):
     """Cleans old container artifacts and unmounts merged dir."""
     if is_mounted(paths["merged"]):
@@ -136,6 +150,13 @@ def clean_up(paths):
 
     if os.path.exists(paths["container_dir"]):
         shutil.rmtree(paths["container_dir"])
+
+
+def clean_up_cgroup(container_id):
+    """Cleans up cgroup artifacts for a specific container."""
+    cgroup_path = os.path.join(CGROUP_BASE, RUNTIME_NAME, container_id)
+    if os.path.exists(cgroup_path):
+        os.rmdir(cgroup_path)
 
 
 def main():
@@ -152,12 +173,15 @@ def main():
     lower_dir = config["root"]["path"]
     # clean up old container artifacts and create dirs for overlayfs
     clean_up(paths)
+    clean_up_cgroup(args.id)
     create_container_dirs(paths)
     # create mount namespace and isolate mount propagation
     create_mount_namespace()
     mount_overlay(paths, lower_dir)
     # create UTS namespace and set hostname
     create_uts_namespace(hostname)
+    # create RAM cgroup
+    cgroup_path = create_ram_cgroup(args.id)
     # create PID namespace and fork the child process
     child_pid = create_pid_namespace()
     if child_pid == 0:
@@ -165,7 +189,12 @@ def main():
         mount_proc()
         run_process(process_args, process_cwd)
     else:
+        # add child process to cgroup and wait for it to finish
+        with open(os.path.join(cgroup_path, "cgroup.procs"),
+                  "w", encoding="utf-8") as f:
+            f.write(str(child_pid))
         os.waitpid(child_pid, 0)
+        clean_up_cgroup(args.id)
 
 
 if __name__ == "__main__":
