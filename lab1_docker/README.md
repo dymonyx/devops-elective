@@ -48,6 +48,10 @@ merged=/var/lib/{имя-утилиты}/{id}/merged
 
 ## 2. Ход выполнения
 
+### 2.0 Alpine rootfs
+
+Базовый alpine rootfs был скачан в виде архива отсюда - [https://dl-cdn.alpinelinux.org/alpine/latest-stable/releases/x86_64/](https://dl-cdn.alpinelinux.org/alpine/latest-stable/releases/x86_64/) и распакован в папку лабораторной.
+
 ### 2.1 OCI - Open Container Runtime - спецификация
 
 Пример представлен тут: [https://github.com/opencontainers/runtime-spec/blob/main/config.md](https://github.com/opencontainers/runtime-spec/blob/main/config.md)
@@ -150,5 +154,5 @@ sudo cat /sys/fs/cgroup/myruntime/test1/cgroup.procs
 
 ## 4. Полезные ссылки
 - [https://github.com/opencontainers/runtime-spec/blob/main/config.md](https://github.com/opencontainers/runtime-spec/blob/main/config.md)
-- [https://github.com/opencontainers/runtime-spec/blob/main/config-linux.md] (https://github.com/opencontainers/runtime-spec/blob/main/config-linux.md)
+- [https://github.com/opencontainers/runtime-spec/blob/main/config-linux.md](https://github.com/opencontainers/runtime-spec/blob/main/config-linux.md)
 - [https://docs.kernel.org/admin-guide/cgroup-v2.html](https://docs.kernel.org/admin-guide/cgroup-v2.html)
