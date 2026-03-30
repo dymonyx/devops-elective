@@ -168,6 +168,9 @@ def main():
     process = config.get("process", {})
     process_cwd = process.get("cwd", "/")
     process_args = process.get("args", [])
+    # get namespace types from config
+    linux = config.get("linux", {})
+    namespace_types = {ns.get("type") for ns in linux.get("namespaces", [])}
     # make paths for dirs for container
     paths = build_paths(args.id)
     lower_dir = config["root"]["path"]
@@ -176,25 +179,34 @@ def main():
     clean_up_cgroup(args.id)
     create_container_dirs(paths)
     # create mount namespace and isolate mount propagation
-    create_mount_namespace()
+    if "mount" in namespace_types:
+        create_mount_namespace()
     mount_overlay(paths, lower_dir)
     # create UTS namespace and set hostname
-    create_uts_namespace(hostname)
+    if "uts" in namespace_types:
+        create_uts_namespace(hostname)
     # create RAM cgroup
     cgroup_path = create_ram_cgroup(args.id)
     # create PID namespace and fork the child process
-    child_pid = create_pid_namespace()
-    if child_pid == 0:
+    if "pid" in namespace_types:
+        child_pid = create_pid_namespace()
+    else:
+        child_pid = -1
+
+    if child_pid == 0:  # in the child process:
         enter_rootfs(paths["merged"])
         mount_proc()
         run_process(process_args, process_cwd)
-    else:
+    elif child_pid > 0:  # in the parent process:
         # add child process to cgroup and wait for it to finish
-        with open(os.path.join(cgroup_path, "cgroup.procs"),
-                  "w", encoding="utf-8") as f:
+        with open(os.path.join(cgroup_path, "cgroup.procs"), "w", encoding="utf-8") as f:
             f.write(str(child_pid))
         os.waitpid(child_pid, 0)
         clean_up_cgroup(args.id)
+    else:
+        enter_rootfs(paths["merged"])
+        mount_proc()
+        run_process(process_args, process_cwd)
 
 
 if __name__ == "__main__":
