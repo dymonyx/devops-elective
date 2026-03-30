@@ -3,11 +3,13 @@
     "process": {
         "cwd": "/root",
         "args": [
-            "hostname"
+            "/bin/sh",
+            "-c",
+            "hostname && echo $$ && ps"
         ]
     },
     "root": {
-        "path": "alpine-rootfs/",
+        "path": "alpine-rootfs",
         "readonly": true
     },
     "hostname": "isolated_agonek",
