@@ -1,10 +1,11 @@
 import json
 import argparse
 import os
+import shutil
 import subprocess
+import socket
 
 BASE_DIR = "/var/lib"
-LOWER_DIR = "/opt/alpine-rootfs"
 RUNTIME_NAME = "myruntime"
 
 
@@ -45,7 +46,7 @@ def create_container_dirs(paths):
         os.makedirs(path, exist_ok=True)
 
 
-def mount_overlay(paths):
+def mount_overlay(paths, LOWER_DIR):
     mount_options = (
         f"lowerdir={LOWER_DIR},"
         f"upperdir={paths['upperdir']},"
@@ -69,8 +70,59 @@ def enter_rootfs(merged):
 
 
 def run_process(process_args, process_cwd):
+    if not process_args:
+        raise ValueError("process.args is empty")
     os.chdir(process_cwd)
     os.execvp(process_args[0], process_args)
+
+
+def create_uts_namespace(hostname):
+    os.unshare(os.CLONE_NEWUTS)
+    socket.sethostname(hostname)
+
+
+def create_mount_namespace():
+    os.unshare(os.CLONE_NEWNS)
+    subprocess.run(["mount", "--make-rprivate", "/"], check=True)
+
+
+def create_pid_namespace():
+    os.unshare(os.CLONE_NEWPID)
+    child_pid = os.fork()
+    return child_pid
+
+
+def is_mounted(path):
+    result = subprocess.run(
+        ["mountpoint", "-q", path],
+        capture_output=True,
+        check=False,
+        text=True
+    )
+    return result.returncode == 0
+
+
+def mount_proc():
+    if not os.path.ismount("/proc"):
+        subprocess.run(
+            ["mount", "-t", "proc", "proc", "/proc"],
+            capture_output=True,
+            check=True,
+            text=True
+        )
+
+
+def clean_up(paths):
+    if is_mounted(paths["merged"]):
+        subprocess.run(
+            ["umount", paths["merged"]],
+            capture_output=True,
+            check=True,
+            text=True
+        )
+
+    if os.path.exists(paths["container_dir"]):
+        shutil.rmtree(paths["container_dir"])
 
 
 def main():
@@ -82,12 +134,24 @@ def main():
     process_cwd = process.get("cwd", "/")
     process_args = process.get("args", [])
     paths = build_paths(args.id)
+    LOWER_DIR = config["root"]["path"]
 
+    clean_up(paths)
     create_container_dirs(paths)
-    mount_overlay(paths)
-    enter_rootfs(paths["merged"])
 
-    run_process(process_args, process_cwd)
+    create_mount_namespace()
+    mount_overlay(paths, LOWER_DIR)
+
+    create_uts_namespace(hostname)
+
+    child_pid = create_pid_namespace()
+
+    if child_pid == 0:
+        enter_rootfs(paths["merged"])
+        mount_proc()
+        run_process(process_args, process_cwd)
+    else:
+        os.waitpid(child_pid, 0)
 
 
 if __name__ == "__main__":
