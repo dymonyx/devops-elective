@@ -50,7 +50,7 @@ merged=/var/lib/{имя-утилиты}/{id}/merged
 
 ### 2.0 Alpine rootfs
 
-Базовый alpine rootfs был скачан в виде архива отсюда - [https://dl-cdn.alpinelinux.org/alpine/latest-stable/releases/x86_64/](https://dl-cdn.alpinelinux.org/alpine/latest-stable/releases/x86_64/) и распакован в папку лабораторной.
+Базовый alpine rootfs был скачан в виде архива [отсюда](https://dl-cdn.alpinelinux.org/alpine/latest-stable/releases/x86_64/) и распакован в папку лабораторной. Используемый архив - `alpine-minirootfs-3.23.3-x86_64.tar.gz`.
 
 ### 2.1 OCI - Open Container Runtime - спецификация
 
